@@ -1,0 +1,19 @@
+<div
+    class="
+        dm__wrapper
+        dm__wrapper--status-{{status}}
+        {{#if location}}dm__wrapper--location-{{location}}{{/if}}
+    "
+    style="left: {{x}}%; top: {{y}}%;"
+>
+    <div class="dm__text">
+        {{#if id}}<div>ID: {{id}}</div>{{/if}}
+        <div>H={{height}}m</div>
+    </div>
+    <div class="dm__rectangle">
+        <svg class="dm__rectangle-svg" width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <path d="M5 2 L1 8 L9 8 Z" fill="currentColor"/>
+        </svg>
+    </div>
+    <div class="dm__point"></div>
+</div>
