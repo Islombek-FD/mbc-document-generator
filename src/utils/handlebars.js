@@ -53,7 +53,9 @@ const helpers = {
    inc: (n) => n + 1,
    sub: (a, b) => a - b,
    length: (arr) => arr?.length ?? 0,
-   stepMinusOne: function () { return this.step - 1; },
+   stepMinusOne: function () {
+      return this.step - 1;
+   },
    progressColor: (isFailed, index, total, step) => {
       if (isFailed && index === total - 1) return 'red';
       if (index + 1 <= step) return 'green';

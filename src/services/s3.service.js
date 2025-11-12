@@ -1,6 +1,6 @@
-const fs = require('fs');
-const path = require('path');
-const AWS = require('aws-sdk');
+import fs from 'fs';
+import path from 'path';
+import AWS from 'aws-sdk';
 
 const s3 = new AWS.S3({
     region: process.env.AWS_REGION,
@@ -9,7 +9,7 @@ const s3 = new AWS.S3({
 
 const BUCKET_NAME = process.env.S3_BUCKET_NAME;
 
-const uploadFileAndGetSignedUrl = async (filePath, key) => {
+export const uploadFileAndGetSignedUrl = async (filePath, key) => {
     if (!BUCKET_NAME) {
         throw new Error('S3_BUCKET_NAME is not configured in environment variables.');
     }
@@ -39,8 +39,4 @@ const uploadFileAndGetSignedUrl = async (filePath, key) => {
         console.error("S3 operation failed:", error);
         throw new Error(`Failed to upload or sign file in S3: ${error.message}`);
     }
-};
-
-module.exports = {
-    uploadFileAndGetSignedUrl
 };

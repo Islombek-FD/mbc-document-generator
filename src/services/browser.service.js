@@ -1,10 +1,10 @@
-const puppeteer = require('puppeteer');
-const pLimit = require('p-limit');
+import puppeteer from 'puppeteer';
+import pLimit from 'p-limit';
 
 let browser = null;
 let limiter = null;
 
-const init = async () => {
+export const init = async () => {
     if (browser) {
         return;
     }
@@ -39,31 +39,24 @@ const init = async () => {
     }
 };
 
-const getBrowser = () => {
+export const getBrowser = () => {
     if (!browser) {
         throw new Error('Browser has not been initialized. Call init() first.');
     }
     return browser;
 };
 
-const getLimiter = () => {
+export const getLimiter = () => {
     if (!limiter) {
         throw new Error('Limiter has not been initialized. Call init() first.');
     }
     return limiter;
 }
 
-const closeBrowser = async () => {
+export const closeBrowser = async () => {
     if (browser) {
         await browser.close();
         browser = null;
         limiter = null;
     }
-};
-
-module.exports = {
-    init,
-    getBrowser,
-    getLimiter,
-    closeBrowser,
 };

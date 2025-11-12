@@ -1,6 +1,6 @@
-const { Queue } = require('bullmq');
+import { Queue } from 'bullmq';
 
-const redisOptions = require('../config/redis');
+import redisOptions from '../config/redis.js';
 
 const reportQueue = new Queue('report-generation', {
     connection: redisOptions,
@@ -13,4 +13,4 @@ const reportQueue = new Queue('report-generation', {
     },
 });
 
-module.exports = reportQueue;
+export default reportQueue;

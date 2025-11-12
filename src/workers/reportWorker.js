@@ -1,13 +1,13 @@
-const os = require('os');
-const fs = require('fs/promises');
-const path = require('path');
-const { Worker } = require('bullmq');
-const { v4: uuidv4 } = require('uuid');
+import os from 'os';
+import path from 'path';
+import fs from 'fs/promises';
+import { Worker } from 'bullmq';
+import { v4 as uuidv4 } from 'uuid';
 
-const Job = require('../models/job.model');
-const redisOptions = require('../config/redis');
-const s3Service = require('../services/s3.service');
-const pdfService = require('../services/pdf.service');
+import Job from '../models/job.model.js';
+import redisOptions from '../config/redis.js';
+import * as s3Service from '../services/s3.service.js';
+import * as pdfService from '../services/pdf.service.js';
 
 const SPRING_BOOT_API_URL = process.env.SPRING_BOOT_API_URL;
 const BATCH_SIZE = parseInt(process.env.DATA_FETCH_BATCH_SIZE, 10) || 100;
@@ -29,14 +29,15 @@ const processor = async (job) => {
         await Job.updateOne({ _id: jobId }, { status: 'processing' });
 
         // --- 2. Get Total Count ---
-        const countUrl = new URL(`${SPRING_BOOT_API_URL}/api/v1/defects/count`);
-        Object.keys(filters).forEach(key => countUrl.searchParams.append(key, filters[key]));
-
-        const countResponse = await fetch(countUrl.toString());
-        if (!countResponse.ok) {
-            throw new Error(`Failed to fetch total count: ${await countResponse.text()}`);
-        }
-        const totalPages = await countResponse.json();
+        // const countUrl = new URL(`${SPRING_BOOT_API_URL}/api/v1/defects/count`);
+        // Object.keys(filters).forEach(key => countUrl.searchParams.append(key, filters[key]));
+        //
+        // const countResponse = await fetch(countUrl.toString());
+        // if (!countResponse.ok) {
+        //     throw new Error(`Failed to fetch total count: ${await countResponse.text()}`);
+        // }
+        // const totalPages = await countResponse.json();
+        const totalPages = 8;
 
         if (totalPages === 0) {
             console.log(`Job ${jobId} has no content. Completing early.`);
@@ -53,19 +54,25 @@ const processor = async (job) => {
         const totalBatches = Math.ceil(totalPages / BATCH_SIZE);
 
         for (let i = 0; i < totalBatches; i++) {
-            const dataUrl = new URL(`${SPRING_BOOT_API_URL}/api/v1/reports/defects`);
-            Object.keys(filters).forEach(key => dataUrl.searchParams.append(key, filters[key]));
+            const dataUrl = new URL(`${SPRING_BOOT_API_URL}/api/v1/references/defects`);
             dataUrl.searchParams.append('page', i);
             dataUrl.searchParams.append('size', BATCH_SIZE);
 
             console.log(`Job ${jobId}: Fetching page ${i+1}/${totalBatches} from ${dataUrl}`);
 
-            const dataResponse = await fetch(dataUrl.toString());
+            const dataResponse = await fetch(dataUrl.toString(), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIrOTk4ODg3MDYyMzE4IiwiaWF0IjoxNzYyOTY0NzQzLCJleHAiOjE3NjMzOTY3NDMsInJvbGUiOiLQotC10YXQvdCw0LTQt9C-0YAifQ.9lVAonxGA1cz25bFv7DMuY4z14bUZdbcnTYBak9kHTd9-rJErrMOmyDBECQnBT7xbjDWyeoHYVAl8WD1RSiCnQ'
+                },
+                body: JSON.stringify(filters),
+            });
             if (!dataResponse.ok) {
                 throw new Error(`Failed to fetch data page ${i}: ${await dataResponse.text()}`);
             }
             const defectPage = await dataResponse.json();
-            const defects = defectPage.content;
+            const defects = defectPage.data;
 
             if (defects && defects.length > 0) {
                 const generatedPaths = await pdfService.generatePdfPages(
@@ -142,4 +149,4 @@ worker.on('failed', (job, err) => {
 });
 
 // Export the worker instance for graceful shutdown
-module.exports = { worker };
+export default worker;

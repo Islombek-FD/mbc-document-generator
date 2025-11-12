@@ -3,4 +3,4 @@ const redisOptions = {
     port: process.env.REDIS_PORT || 6379,
 };
 
-module.exports = redisOptions;
+export default redisOptions;

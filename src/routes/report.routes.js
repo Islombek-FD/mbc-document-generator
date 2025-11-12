@@ -1,11 +1,11 @@
-const express = require('express');
-const { v4: uuidv4 } = require('uuid');
-const { body, validationResult } = require('express-validator');
+import express from 'express';
+import { v4 as uuidv4 } from 'uuid';
+import { body, validationResult } from 'express-validator';
 
-const Job = require('../models/job.model');
-const reportQueue = require('../jobs/reportQueue');
+import Job from '../models/job.model.js';
+import reportQueue from '../jobs/reportQueue.js';
 
-const apiKeyAuth = require('../middleware/auth.middleware');
+import apiKeyAuth from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
@@ -52,4 +52,4 @@ router.get('/status/:jobId', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

@@ -1,23 +1,21 @@
-const path = require('path');
-const dotenv = require('dotenv');
-const mongoose = require('mongoose');
-const bodyParser = require('body-parser');
+import path from 'path';
+import helmet from 'helmet';
+import express from 'express';
+import mongoose from 'mongoose';
+import bodyParser from 'body-parser';
+import { fileURLToPath } from 'url';
+import rateLimit from 'express-rate-limit';
 
-// Dynamically load environment variables based on NODE_ENV
-const envFile = `.env.${process.env.NODE_ENV || 'development'}`;
-const envPath = path.resolve(__dirname, `../${envFile}`);
-dotenv.config({ path: envPath });
+import './config/index.js';
 
-console.log(`Loading environment from: ${envPath}`);
+import connectDB from './config/db.js';
+import reportRoutes from './routes/report.routes.js';
+import * as browserService from './services/browser.service.js';
+import reportWorker from './workers/reportWorker.js';
+import reportQueue from './jobs/reportQueue.js';
 
-const express = require('express');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
-const connectDB = require('./config/db');
-const reportRoutes = require('./routes/report.routes.js');
-const browserService = require('./services/browser.service');
-const { worker: reportWorker } = require('./workers/reportWorker'); // Import worker instance
-const reportQueue = require('./jobs/reportQueue'); // Import queue instance
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // --- Main Application Setup ---
 const app = express();

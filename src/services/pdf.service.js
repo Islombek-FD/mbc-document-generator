@@ -1,9 +1,13 @@
-const fs= require('fs-extra');
-const path = require('path');
-const { PDFDocument } = require('pdf-lib');
+import path  from 'path';
+import fs from 'fs-extra';
+import { fileURLToPath } from 'url';
+import { PDFDocument } from 'pdf-lib';
 
-const browserService = require('./browser.service');
-const Handlebars = require('../utils/handlebars');
+import Handlebars from '../utils/handlebars.js';
+import * as browserService from './browser.service.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const generateSinglePage = async (html, template, tempDir, pageNumber) => {
     const browser = browserService.getBrowser();
@@ -42,7 +46,7 @@ const generateSinglePage = async (html, template, tempDir, pageNumber) => {
     }
 };
 
-const generatePdfPages = async (defects, utils, tempDir, onProgress, startingPageNumber = 0) => {
+export const generatePdfPages = async (defects, utils, tempDir, onProgress, startingPageNumber = 0) => {
     const templatePath = path.join(__dirname, '..', 'templates', `${utils.template}.hbs`);
     const templateSource = await fs.readFile(templatePath, 'utf-8');
     const template = Handlebars.compile(templateSource);
@@ -69,7 +73,7 @@ const generatePdfPages = async (defects, utils, tempDir, onProgress, startingPag
     return Promise.all(generationPromises);
 };
 
-const mergePdfPages = async (pagePaths, outputPath) => {
+export const mergePdfPages = async (pagePaths, outputPath) => {
     pagePaths.sort((a, b) => {
         const numA = parseInt(a.match(/(\d+)\.pdf$/)[1], 10);
         const numB = parseInt(b.match(/(\d+)\.pdf$/)[1], 10);
@@ -86,9 +90,4 @@ const mergePdfPages = async (pagePaths, outputPath) => {
 
     const mergedPdfBytes = await mergedPdf.save();
     await fs.writeFile(outputPath, mergedPdfBytes);
-};
-
-module.exports = {
-    generatePdfPages,
-    mergePdfPages,
 };
