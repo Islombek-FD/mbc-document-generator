@@ -22,12 +22,12 @@ const reportQueue = require('./jobs/reportQueue'); // Import queue instance
 // --- Main Application Setup ---
 const app = express();
 
-// --- Security Middlewares ---
-app.use(helmet()); // Set various security HTTP headers
+// --- Security Middlewares (Set various security HTTP headers) ---
+app.use(helmet());
 
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
+    windowMs: 15 * 60 * 1000,   // 15 minutes
+    max: 100,                   // Limit each IP to 100 requests per windowMs
     standardHeaders: true,
     legacyHeaders: false,
 });
@@ -37,7 +37,6 @@ app.use(limiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-
 app.use(bodyParser.json({ limit: "1024mb" }));
 
 app.use('/css', express.static(path.join(__dirname, 'public', 'css')));
@@ -45,15 +44,15 @@ app.use('/fonts', express.static(path.join(__dirname, 'public', 'fonts')));
 app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
 
 // --- API Routes ---
-app.use('/api', reportRoutes);
+app.use('/api/v1/pdf', reportRoutes);
 
 // --- Global Error Handler ---
-app.use((err, req, res, next) => {
+app.use((err, _req, res) => {
     console.error(err.stack);
     res.status(500).send('Something broke!');
 });
 
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 3000;
 
 const startServer = async () => {
     try {
@@ -108,7 +107,6 @@ const startServer = async () => {
 
         process.on('SIGTERM', () => shutdown('SIGTERM'));
         process.on('SIGINT', () => shutdown('SIGINT'));
-
     } catch (error) {
         console.error('Failed to start server:', error);
         process.exit(1);

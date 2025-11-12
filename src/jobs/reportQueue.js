@@ -1,4 +1,5 @@
 const { Queue } = require('bullmq');
+
 const redisOptions = require('../config/redis');
 
 const reportQueue = new Queue('report-generation', {

@@ -18,8 +18,9 @@ if (!SPRING_BOOT_API_URL) {
 }
 
 const processor = async (job) => {
-    const { jobId, filters } = job.data;
-    console.log(`Processing job ${jobId} with filters:`, filters);
+    const { jobId, filters, utils } = job.data;
+
+    console.log(`Processing job ${jobId} with filters: ${filters} and utils: ${utils}.`);
 
     let tempDir;
     try {
@@ -32,7 +33,9 @@ const processor = async (job) => {
         Object.keys(filters).forEach(key => countUrl.searchParams.append(key, filters[key]));
 
         const countResponse = await fetch(countUrl.toString());
-        if (!countResponse.ok) throw new Error(`Failed to fetch total count: ${await countResponse.text()}`);
+        if (!countResponse.ok) {
+            throw new Error(`Failed to fetch total count: ${await countResponse.text()}`);
+        }
         const totalPages = await countResponse.json();
 
         if (totalPages === 0) {
@@ -41,6 +44,7 @@ const processor = async (job) => {
             await fs.rm(tempDir, { recursive: true, force: true });
             return;
         }
+
         await Job.updateOne({ _id: jobId }, { totalPages });
 
         // --- 3. Paginated Data Fetching and PDF Generation ---
@@ -49,20 +53,24 @@ const processor = async (job) => {
         const totalBatches = Math.ceil(totalPages / BATCH_SIZE);
 
         for (let i = 0; i < totalBatches; i++) {
-            const dataUrl = new URL(`${SPRING_BOOT_API_URL}/api/internal/defects`);
+            const dataUrl = new URL(`${SPRING_BOOT_API_URL}/api/v1/reports/defects`);
             Object.keys(filters).forEach(key => dataUrl.searchParams.append(key, filters[key]));
             dataUrl.searchParams.append('page', i);
             dataUrl.searchParams.append('size', BATCH_SIZE);
 
             console.log(`Job ${jobId}: Fetching page ${i+1}/${totalBatches} from ${dataUrl}`);
+
             const dataResponse = await fetch(dataUrl.toString());
-            if (!dataResponse.ok) throw new Error(`Failed to fetch data page ${i}: ${await dataResponse.text()}`);
+            if (!dataResponse.ok) {
+                throw new Error(`Failed to fetch data page ${i}: ${await dataResponse.text()}`);
+            }
             const defectPage = await dataResponse.json();
             const defects = defectPage.content;
 
             if (defects && defects.length > 0) {
                 const generatedPaths = await pdfService.generatePdfPages(
                    defects,
+                   utils,
                    tempDir,
                    async (batchProgress) => {
                        const newProcessedCount = processedPages + batchProgress;
@@ -99,7 +107,6 @@ const processor = async (job) => {
             s3Url: s3Url,
         });
         console.log(`Job ${jobId} completed successfully. Report available at: ${s3Url}`);
-
     } catch (error) {
         console.error(`Job ${jobId} failed:`, error);
         await Job.updateOne({ _id: jobId }, {

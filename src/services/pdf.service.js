@@ -1,31 +1,49 @@
-const fs = require('fs/promises');
+const fs= require('fs-extra');
 const path = require('path');
 const { PDFDocument } = require('pdf-lib');
 
 const browserService = require('./browser.service');
 const Handlebars = require('../utils/handlebars');
 
-const generateSinglePage = async (pageData, template, tempDir, pageNumber) => {
+const generateSinglePage = async (html, template, tempDir, pageNumber) => {
     const browser = browserService.getBrowser();
+
     let page;
+
     try {
         page = await browser.newPage();
-        await page.setContent(template(pageData), { waitUntil: 'networkidle0' });
+
+        await page.setContent(html, { waitUntil: 'networkidle0' });
+
+        const cssPath = path.join(__dirname, '..', 'public', 'css', `${template}.css`);
+        if (await fs.pathExists(cssPath)) {
+            const css = await fs.readFile(cssPath, 'utf-8');
+            await page.addStyleTag({ content: css });
+        }
 
         const pdfPath = path.join(tempDir, `page-${pageNumber}.pdf`);
         await page.pdf({
             path: pdfPath,
             format: 'A4',
             printBackground: true,
+            margin: {
+                top: "20mm",
+                bottom: "20mm",
+                left: "10mm",
+                right: "10mm"
+            },
         });
+
         return pdfPath;
     } finally {
-        if (page) await page.close();
+        if (page) {
+            await page.close();
+        }
     }
 };
 
-const generatePdfPages = async (defects, tempDir, onProgress, startingPageNumber = 0) => {
-    const templatePath = path.join(__dirname, '..', 'templates', 'defect-template.hbs');
+const generatePdfPages = async (defects, utils, tempDir, onProgress, startingPageNumber = 0) => {
+    const templatePath = path.join(__dirname, '..', 'templates', `${utils.template}.hbs`);
     const templateSource = await fs.readFile(templatePath, 'utf-8');
     const template = Handlebars.compile(templateSource);
 
@@ -35,12 +53,14 @@ const generatePdfPages = async (defects, tempDir, onProgress, startingPageNumber
 
     for (let i = 0; i < defects.length; i++) {
         const absolutePageNumber = startingPageNumber + i + 1;
-        const pageData = { ...defects[i], pageNumber: absolutePageNumber };
+        const pageData = { ...defects[i], ...utils, pageNumber: absolutePageNumber };
 
         const promise = limiter(async () => {
-            const result = await generateSinglePage(pageData, template, tempDir, absolutePageNumber);
+            const result = await generateSinglePage(template(pageData), utils.template, tempDir, absolutePageNumber);
             processedCountInBatch++;
-            if(onProgress) await onProgress(processedCountInBatch);
+            if(onProgress) {
+                await onProgress(processedCountInBatch);
+            }
             return result;
         });
         generationPromises.push(promise);

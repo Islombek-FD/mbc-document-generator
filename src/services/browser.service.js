@@ -27,13 +27,12 @@ const init = async () => {
             args: args,
             ignoreHTTPSErrors: true,
         });
-        
+
         // --- CONCURRENCY OPTIMIZATION ---
         // Create a global limiter for all Puppeteer page operations
         const concurrency = parseInt(process.env.PUPPETEER_PAGE_CONCURRENCY, 10) || 20;
         limiter = pLimit(concurrency);
         console.log(`Puppeteer page concurrency limit set to ${concurrency}`);
-
     } catch (error) {
         console.error('Failed to launch Puppeteer browser:', error);
         throw error;
