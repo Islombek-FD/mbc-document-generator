@@ -18,8 +18,8 @@ export const init = async () => {
             '--ignore-certifcate-errors',
             '--ignore-certifcate-errors-spki-list',
             '--user-agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"',
-            '--disable-gpu', // Important for server environments
-            '--disable-dev-shm-usage', // Important for container environments
+            '--disable-gpu',            // Important for server environments
+            '--disable-dev-shm-usage',  // Important for container environments
         ];
 
         browser = await puppeteer.launch({

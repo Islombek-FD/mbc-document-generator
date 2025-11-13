@@ -10,8 +10,8 @@ export async function generateQRCode(content) {
             light: '#FFFFFF'
          }
       });
-   } catch (err) {
-      console.error('Error when QR Code generating: ', err);
+   } catch (error) {
+      console.error('Error when QR Code generating: ', error);
       return '';
    }
 }

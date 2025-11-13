@@ -10,9 +10,9 @@ import './config/index.js';
 
 import connectDB from './config/db.js';
 import reportRoutes from './routes/report.routes.js';
-import * as browserService from './services/browser.service.js';
-import reportWorker from './workers/reportWorker.js';
 import reportQueue from './jobs/reportQueue.js';
+import reportWorker from './workers/reportWorker.js';
+import * as browserService from './services/browser.service.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -37,6 +37,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(bodyParser.json({ limit: "1024mb" }));
 
+// --- Static Folders ---
 app.use('/css', express.static(path.join(__dirname, 'public', 'css')));
 app.use('/fonts', express.static(path.join(__dirname, 'public', 'fonts')));
 app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
