@@ -20,6 +20,9 @@ const jobSchema = new mongoose.Schema({
     s3Url: {
         type: String
     },
+    uploadPath: {
+        type: String
+    },
     error: {
         type: String
     },

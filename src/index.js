@@ -9,6 +9,8 @@ import rateLimit from 'express-rate-limit';
 import './config/index.js';
 
 import connectDB from './config/db.js';
+import jobRoutes from './routes/job.routes.js';
+import fileRoutes from './routes/file.routes.js';
 import reportRoutes from './routes/report.routes.js';
 import reportQueue from './jobs/reportQueue.js';
 import reportWorker from './workers/reportWorker.js';
@@ -43,7 +45,9 @@ app.use('/fonts', express.static(path.join(__dirname, 'public', 'fonts')));
 app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
 
 // --- API Routes ---
-app.use('/api/v1/pdf', reportRoutes);
+app.use('/api/v1/jobs', jobRoutes);
+app.use('/api/v1/files', fileRoutes);
+app.use('/api/v1/reports', reportRoutes);
 
 // --- Global Error Handler ---
 app.use((err, _req, res) => {

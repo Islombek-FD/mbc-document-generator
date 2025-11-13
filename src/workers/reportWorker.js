@@ -2,12 +2,10 @@ import os from 'os';
 import path from 'path';
 import fs from 'fs/promises';
 import { Worker } from 'bullmq';
-import { v4 as uuidv4 } from 'uuid';
 import { fileURLToPath } from 'url';
 
 import Job from '../models/job.model.js';
 import redisOptions from '../config/redis.js';
-import * as s3Service from '../services/s3.service.js';
 import * as pdfService from '../services/pdf.service.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -124,18 +122,16 @@ const processor = async (job) => {
         await fs.copyFile(finalPdfPath, destPath);
         console.log(`PDF saved at: ${destPath}`);
 
-        // --- 5. Upload to S3 ---
-        //const s3Key = `reports/${jobId}/${uuidv4()}-report.pdf`;
-        //const s3Url = await s3Service.uploadFileAndGetSignedUrl(finalPdfPath, s3Key);
-
         // --- 6. Finalize Job ---
-        // await Job.updateOne({ _id: jobId }, {
-        //     status: 'completed',
-        //     progress: 100,
-        //     processedPages: totalPages,
-        //     s3Url: s3Url,
-        // });
-        // console.log(`Job ${jobId} completed successfully. Report available at: ${s3Url}`);
+        const uploadPath = path.relative(path.join(__dirname, '../..'), destPath).replace(/\\/g, '/');
+
+        await Job.updateOne({ _id: jobId }, {
+            status: 'completed',
+            progress: 100,
+            processedPages: totalPages,
+            uploadPath: `/${uploadPath}`
+        });
+        console.log(`Job ${jobId} completed successfully. Report available at: ${uploadPath}`);
     } catch (error) {
         console.error(`Job ${jobId} failed:`, error);
         await Job.updateOne({ _id: jobId }, {
