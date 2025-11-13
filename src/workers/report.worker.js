@@ -4,7 +4,7 @@ import fs from 'fs/promises';
 import { Worker } from 'bullmq';
 import { fileURLToPath } from 'url';
 
-import Job from '../models/job.model.js';
+import Report from '../models/report.model.js';
 import redisOptions from '../config/redis.js';
 import * as pdfService from '../services/pdf.service.js';
 
@@ -20,15 +20,15 @@ if (!BACKEND_API_URL) {
 }
 
 const processor = async (job) => {
-    const { jobId, filters, utils } = job.data;
+    const { reportId, filters, utils } = job.data;
 
-    console.log(`Processing job ${jobId} with filters: ${filters} and utils: ${utils}.`);
+    console.log(`Report processing has begun. ID: ${reportId}`);
 
     let tempDir;
     try {
         // --- 1. Setup ---
-        tempDir = await fs.mkdtemp(path.join(os.tmpdir(), `report-${jobId}-`));
-        await Job.updateOne({ _id: jobId }, { status: 'processing' });
+        tempDir = await fs.mkdtemp(path.join(os.tmpdir(), `report-${reportId}-`));
+        await Report.updateOne({ _id: reportId }, { status: 'processing' });
 
         // --- 2. Get Total Count ---
         const countResponse = await fetch(`${BACKEND_API_URL}/api/v1/references/defects/count`, {
@@ -45,13 +45,13 @@ const processor = async (job) => {
         const totalPages = await countResponse.json();
 
         if (totalPages === 0) {
-            console.log(`Job ${jobId} has no content. Completing early.`);
-            await Job.updateOne({ _id: jobId }, { status: 'completed', progress: 100, totalPages: 0, s3Url: null });
+            console.log(`Report ${reportId} has no content. Completing early.`);
+            await Report.updateOne({ _id: reportId }, { status: 'completed', progress: 100, totalPages: 0, s3Url: null });
             await fs.rm(tempDir, { recursive: true, force: true });
             return;
         }
 
-        await Job.updateOne({ _id: jobId }, { totalPages });
+        await Report.updateOne({ _id: reportId }, { totalPages });
 
         // --- 3. Paginated Data Fetching and PDF Generation ---
         let processedPages = 0;
@@ -63,7 +63,7 @@ const processor = async (job) => {
             backendUrl.searchParams.append('page', i);
             backendUrl.searchParams.append('size', BATCH_SIZE);
 
-            console.log(`Job ${jobId}: Fetching page ${i+1}/${totalBatches} from ${backendUrl}`);
+            console.log(`Report ${reportId}: Fetching page ${i+1}/${totalBatches} from ${backendUrl}`);
 
             const dataResponse = await fetch(backendUrl.toString(), {
                 method: 'POST',
@@ -87,7 +87,7 @@ const processor = async (job) => {
                    async (batchProgress) => {
                        const newProcessedCount = processedPages + batchProgress;
                        if (newProcessedCount % PROGRESS_UPDATE_BATCH === 0 || newProcessedCount === totalPages) {
-                           await Job.updateOne({ _id: jobId }, {
+                           await Report.updateOne({ _id: reportId }, {
                                progress: Math.round((newProcessedCount / totalPages) * 100),
                                processedPages: newProcessedCount
                            });
@@ -122,19 +122,19 @@ const processor = async (job) => {
         await fs.copyFile(finalPdfPath, destPath);
         console.log(`PDF saved at: ${destPath}`);
 
-        // --- 6. Finalize Job ---
+        // --- 6. Finalize Report ---
         const uploadPath = path.relative(path.join(__dirname, '../..'), destPath).replace(/\\/g, '/');
 
-        await Job.updateOne({ _id: jobId }, {
+        await Report.updateOne({ _id: reportId }, {
             status: 'completed',
             progress: 100,
             processedPages: totalPages,
             uploadPath: `/${uploadPath}`
         });
-        console.log(`Job ${jobId} completed successfully. Report available at: ${uploadPath}`);
+        console.log(`Report ${reportId} completed successfully. Report available at: ${uploadPath}`);
     } catch (error) {
-        console.error(`Job ${jobId} failed:`, error);
-        await Job.updateOne({ _id: jobId }, {
+        console.error(`Report ${reportId} failed:`, error);
+        await Report.updateOne({ _id: reportId }, {
             status: 'failed',
             error: error.message || 'An unknown error occurred.',
         });

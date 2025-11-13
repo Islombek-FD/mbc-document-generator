@@ -1,10 +1,10 @@
 import mongoose from 'mongoose';
 
-const jobSchema = new mongoose.Schema({
+const reportSchema = new mongoose.Schema({
     _id: {
         type: String,
         required: true
-    }, // Using UUID from the job
+    }, // Using UUID from the Report
     progress: {
         type: Number,
         default: 0
@@ -16,9 +16,6 @@ const jobSchema = new mongoose.Schema({
     processedPages: {
         type: Number,
         default: 0
-    },
-    s3Url: {
-        type: String
     },
     uploadPath: {
         type: String
@@ -33,6 +30,6 @@ const jobSchema = new mongoose.Schema({
     },
 }, { timestamps: true });
 
-const Job = mongoose.model('Job', jobSchema);
+const Report = mongoose.model('Report', reportSchema);
 
-export default Job;
+export default Report;
