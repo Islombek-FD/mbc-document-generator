@@ -9,11 +9,11 @@ import rateLimit from 'express-rate-limit';
 import './config/index.js';
 
 import connectDB from './config/db.js';
-import jobRoutes from './routes/job.routes.js';
-import fileRoutes from './routes/file.routes.js';
-import reportRoutes from './routes/report.routes.js';
-import reportQueue from './jobs/reportQueue.js';
-import reportWorker from './workers/reportWorker.js';
+import jobRoutes from './routes/job.route.js';
+import fileRoutes from './routes/file.route.js';
+import reportRoutes from './routes/report.route.js';
+import reportQueue from './queues/report.queue.js';
+import reportWorker from './workers/report.worker.js';
 import * as browserService from './services/browser.service.js';
 
 const __filename = fileURLToPath(import.meta.url);

@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { body, validationResult } from 'express-validator';
 
 import Job from '../models/job.model.js';
-import reportQueue from '../jobs/reportQueue.js';
+import reportQueue from '../queues/report.queue.js';
 
 // import apiKeyAuth from '../middleware/auth.middleware.js';
 
