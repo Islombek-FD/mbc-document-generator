@@ -3,7 +3,6 @@ import path from 'path';
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { fileURLToPath } from 'url';
-import { body, validationResult } from 'express-validator';
 
 import Report from '../models/report.model.js';
 import reportQueue from '../queues/report.queue.js';
@@ -65,9 +64,7 @@ router.get('/', async (req, res) => {
             page,
             limit,
             total,
-            totalPages,
-            hasNextPage: page < totalPages,
-            hasPrevPage: page > 1,
+            totalPages
          },
       });
    } catch (error) {
@@ -95,42 +92,14 @@ router.get('/:id', async (req, res) => {
 });
 
 /**
- * POST /reports/generate
- * Starts a new PDF generation job
- */
-router.post('/generate', body('filters').isObject().withMessage('Filters must be an object.'),
-    async (req, res) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
-        }
-
-        const reportId = uuidv4();
-
-        try {
-            // Create a report record in MongoDB
-            await Report.create({ _id: reportId, status: 'pending' });
-
-            // Add the job to the BullMQ queue with filters
-            await reportQueue.add('generate-pdf', { reportId, ...req.body });
-
-            res.status(202).json({ reportId });
-        } catch (error) {
-            console.error('Failed to create report: ', error);
-            res.status(500).json({ message: 'Failed to queue report.', error: error.message });
-        }
-    }
-);
-
-/**
  * POST /reports/download/:reportId
  * Download PDF by Streaming
  */
-router.get('/download/:reportId', async (req, res) => {
-   const { reportId } = req.params;
+router.get('/:id/download', async (req, res) => {
+   const { id } = req.params;
 
    try {
-      const report = await Report.findById(reportId);
+      const report = await Report.findById(id);
 
       if (!report) {
          return res.status(404).json({ message: 'Report not found' });
@@ -157,5 +126,27 @@ router.get('/download/:reportId', async (req, res) => {
       res.status(500).json({ message: 'Internal server error' });
    }
 });
+
+/**
+ * POST /reports/generate
+ * Starts a new PDF generation job
+ */
+router.post('/generate', async (req, res) => {
+        const reportId = uuidv4();
+
+        try {
+            // Create a report record in MongoDB
+            await Report.create({ _id: reportId, status: 'pending' });
+
+            // Add the job to the BullMQ queue with filters
+            await reportQueue.add('generate-pdf', { reportId, ...req.body });
+
+            res.status(202).json(reportId);
+        } catch (error) {
+            console.error('Failed to create report: ', error);
+            res.status(500).json({ message: 'Failed to queue report.', error: error.message });
+        }
+    }
+);
 
 export default router;

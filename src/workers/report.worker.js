@@ -20,7 +20,7 @@ if (!BACKEND_API_URL) {
 }
 
 const processor = async (job) => {
-    const { reportId, filters, utils } = job.data;
+    const { reportId, filter, utils } = job.data;
 
     console.log(`Report processing has begun. ID: ${reportId}`);
 
@@ -31,13 +31,12 @@ const processor = async (job) => {
         await Report.updateOne({ _id: reportId }, { status: 'processing' });
 
         // --- 2. Get Total Count ---
-        const countResponse = await fetch(`${BACKEND_API_URL}/api/v1/references/defects/count`, {
+        const countResponse = await fetch(`${BACKEND_API_URL}/api/v1/generator/defects/count`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIrOTk4ODg3MDYyMzE4IiwiaWF0IjoxNzYyOTY0NzQzLCJleHAiOjE3NjMzOTY3NDMsInJvbGUiOiLQotC10YXQvdCw0LTQt9C-0YAifQ.9lVAonxGA1cz25bFv7DMuY4z14bUZdbcnTYBak9kHTd9-rJErrMOmyDBECQnBT7xbjDWyeoHYVAl8WD1RSiCnQ'
             },
-            body: JSON.stringify(filters),
+            body: JSON.stringify(filter),
         });
         if (!countResponse.ok) {
             throw new Error(`Failed to fetch total count: ${await countResponse.text()}`);
@@ -46,7 +45,7 @@ const processor = async (job) => {
 
         if (totalPages === 0) {
             console.log(`Report ${reportId} has no content. Completing early.`);
-            await Report.updateOne({ _id: reportId }, { status: 'completed', progress: 100, totalPages: 0, s3Url: null });
+            await Report.updateOne({ _id: reportId }, { status: 'completed', progress: 100, totalPages: 0, uploadPath: null });
             await fs.rm(tempDir, { recursive: true, force: true });
             return;
         }
@@ -59,7 +58,7 @@ const processor = async (job) => {
         const totalBatches = Math.ceil(totalPages / BATCH_SIZE);
 
         for (let i = 0; i < totalBatches; i++) {
-            const backendUrl = new URL(`${BACKEND_API_URL}/api/v1/references/defects`);
+            const backendUrl = new URL(`${BACKEND_API_URL}/api/v1/generator/defects`);
             backendUrl.searchParams.append('page', i);
             backendUrl.searchParams.append('size', BATCH_SIZE);
 
@@ -69,9 +68,8 @@ const processor = async (job) => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIrOTk4ODg3MDYyMzE4IiwiaWF0IjoxNzYyOTY0NzQzLCJleHAiOjE3NjMzOTY3NDMsInJvbGUiOiLQotC10YXQvdCw0LTQt9C-0YAifQ.9lVAonxGA1cz25bFv7DMuY4z14bUZdbcnTYBak9kHTd9-rJErrMOmyDBECQnBT7xbjDWyeoHYVAl8WD1RSiCnQ'
                 },
-                body: JSON.stringify(filters),
+                body: JSON.stringify(filter),
             });
             if (!dataResponse.ok) {
                 throw new Error(`Failed to fetch data page ${i}: ${await dataResponse.text()}`);
@@ -133,7 +131,7 @@ const processor = async (job) => {
         });
         console.log(`Report ${reportId} completed successfully. Report available at: ${uploadPath}`);
     } catch (error) {
-        console.error(`Report ${reportId} failed:`, error);
+        console.error(`Report ${reportId} failed: `, error);
         await Report.updateOne({ _id: reportId }, {
             status: 'failed',
             error: error.message || 'An unknown error occurred.',
