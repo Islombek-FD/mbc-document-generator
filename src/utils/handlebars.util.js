@@ -3,7 +3,7 @@ import fs from 'fs-extra';
 import { fileURLToPath } from 'url';
 import Handlebars from 'handlebars';
 
-import { getLogoBase64 } from './logo.js';
+import { getLogoBase64 } from './logo.util.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

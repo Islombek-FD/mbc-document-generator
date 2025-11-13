@@ -3,7 +3,7 @@ import fs from 'fs-extra';
 import { fileURLToPath } from 'url';
 import { PDFDocument } from 'pdf-lib';
 
-import Handlebars from '../utils/handlebars.js';
+import Handlebars from '../utils/handlebars.util.js';
 import * as browserService from './browser.service.js';
 
 const __filename = fileURLToPath(import.meta.url);
