@@ -2,14 +2,10 @@ import os from 'os';
 import path from 'path';
 import fs from 'fs/promises';
 import { Worker } from 'bullmq';
-import { fileURLToPath } from 'url';
 
 import Report from '../models/report.model.js';
 import redisOptions from '../config/redis.js';
 import * as pdfService from '../services/pdf.service.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const BACKEND_API_URL = process.env.BACKEND_API_URL;
 const BATCH_SIZE = 100;
@@ -20,10 +16,18 @@ if (!BACKEND_API_URL) {
 }
 
 const processor = async (job) => {
-    const { reportId, filter, utils } = job.data;
+    const { reportId, utils: { template } } = job.data;
 
     console.log(`Report processing has begun. ID: ${reportId}`);
 
+    if (template === 'defects') {
+       await generateDefectsPdf(job.data);
+    } else if (template === 'defect') {
+        await generateDefectPdf(job.data);
+    }
+};
+
+const generateDefectsPdf = async ({ reportId, filter, utils }) => {
     let tempDir;
     try {
         // --- 1. Setup ---
@@ -106,30 +110,15 @@ const processor = async (job) => {
         await pdfService.mergePdfPages(allPagePaths, finalPdfPath);
 
         // --- 5. Save final PDF to /reports/X_YEAR/Y_MONTH/Z_DAY/{date}.pdf ---
-        const date = new Date();
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-
-        const reportsDir = path.join(__dirname, '../..', 'reports', `${year.toString()}_YEAR`, `${month}_MONTH`, `${day}_DAY`);
-        await fs.mkdir(reportsDir, { recursive: true });
-
-        const fileName = `${Date.now()}.pdf`;
-        const destPath = path.join(reportsDir, fileName);
-
-        await fs.copyFile(finalPdfPath, destPath);
-        console.log(`PDF saved at: ${destPath}`);
-
-        // --- 6. Finalize Report ---
-        const uploadPath = path.relative(path.join(__dirname, '../..'), destPath).replace(/\\/g, '/');
+        const destPath = await pdfService.saveReportPdf(finalPdfPath);
 
         await Report.updateOne({ _id: reportId }, {
             status: 'completed',
             progress: 100,
             processedPages: totalPages,
-            uploadPath: `/${uploadPath}`
+            uploadPath: `/${destPath}`
         });
-        console.log(`Report ${reportId} completed successfully. Report available at: ${uploadPath}`);
+        console.log(`Report ${reportId} completed successfully. Report available at: ${destPath}`);
     } catch (error) {
         console.error(`Report ${reportId} failed: `, error);
         await Report.updateOne({ _id: reportId }, {
@@ -139,7 +128,7 @@ const processor = async (job) => {
         // Re-throw the error to let BullMQ know the job failed
         throw error;
     } finally {
-        // --- 7. Cleanup temp directory ---
+        // --- 6. Cleanup temp directory ---
         if (tempDir) {
             await fs.rm(tempDir, { recursive: true, force: true });
             console.log(`Cleaned up temp directory: ${tempDir}`);
@@ -147,13 +136,41 @@ const processor = async (job) => {
     }
 };
 
+const generateDefectPdf = async ({ reportId, data, utils }) => {
+    try {
+        // --- 1. Setup ---
+        await Report.updateOne({ _id: reportId }, { status: 'processing' });
+
+        // --- 2. Generate Report PDF and Get upload path ---
+        const destPath = await pdfService.generatePdf(data, utils);
+
+        // --- 3. Set upload path to report ---
+        await Report.updateOne({ _id: reportId }, {
+            status: 'completed',
+            progress: 100,
+            uploadPath: `/${destPath}`
+        });
+        console.log(`Report ${reportId} completed successfully. Report available at: ${destPath}`);
+    } catch (error) {
+        console.error(`Report ${reportId} failed: `, error);
+        await Report.updateOne({ _id: reportId }, {
+            status: 'failed',
+            error: error.message || 'An unknown error occurred.',
+        });
+        // Re-throw the error to let BullMQ know the job failed
+        throw error;
+    }
+};
+
 const worker = new Worker('report-generation', processor, {
     connection: redisOptions,
     concurrency: parseInt(process.env.WORKER_CONCURRENCY, 10) || 4,
+    lockDuration: 600000, // 10 minutes
     limiter: {
         max: 10,
-        duration: 1000,
+        duration: 1000
     },
+    autorun: true,
 });
 
 worker.on('completed', (job) => {
