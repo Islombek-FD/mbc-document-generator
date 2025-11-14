@@ -5,34 +5,31 @@ let browser = null;
 let limiter = null;
 
 export const init = async () => {
-    if (browser) {
-        return;
-    }
+    if (browser) return;
+
     try {
-        // Production-ready arguments for running in a server/container environment
         const args = [
             '--no-sandbox',
             '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
             '--disable-infobars',
             '--window-position=0,0',
-            '--ignore-certifcate-errors',
-            '--ignore-certifcate-errors-spki-list',
-            '--user-agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"',
-            '--disable-gpu',            // Important for server environments
-            '--disable-dev-shm-usage',  // Important for container environments
+            '--ignore-certificate-errors',
+            '--ignore-certificate-errors-spki-list',
         ];
 
         browser = await puppeteer.launch({
             headless: true,
-            args: args,
+            args,
             ignoreHTTPSErrors: true,
         });
 
-        // --- CONCURRENCY OPTIMIZATION ---
-        // Create a global limiter for all Puppeteer page operations
-        const concurrency = parseInt(process.env.PUPPETEER_PAGE_CONCURRENCY, 10) || 20;
+        // concurrency limit
+        const concurrency = parseInt(process.env.PUPPETEER_PAGE_CONCURRENCY, 10) || 5;
         limiter = pLimit(concurrency);
-        console.log(`Puppeteer page concurrency limit set to ${concurrency}`);
+
+        console.log(`Puppeteer concurrency: ${concurrency}`);
     } catch (error) {
         console.error('Failed to launch Puppeteer browser:', error);
         throw error;
@@ -41,17 +38,17 @@ export const init = async () => {
 
 export const getBrowser = () => {
     if (!browser) {
-        throw new Error('Browser has not been initialized. Call init() first.');
+        throw new Error('Browser not initialized. Call init() first.');
     }
     return browser;
 };
 
 export const getLimiter = () => {
     if (!limiter) {
-        throw new Error('Limiter has not been initialized. Call init() first.');
+        throw new Error('Limiter not initialized. Call init() first.');
     }
     return limiter;
-}
+};
 
 export const closeBrowser = async () => {
     if (browser) {

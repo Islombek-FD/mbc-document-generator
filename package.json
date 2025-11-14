@@ -20,8 +20,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "aws-sdk": "^2.1645.0",
-    "body-parser": "^2.2.0",
     "bullmq": "^5.8.2",
     "cross-env": "^7.0.3",
     "dotenv": "^16.4.5",
@@ -31,7 +29,6 @@
     "fs-extra": "^11.3.2",
     "handlebars": "^4.7.8",
     "helmet": "^7.1.0",
-    "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.4.3",
     "p-limit": "^3.1.0",
     "pdf-lib": "^1.17.1",

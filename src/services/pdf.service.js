@@ -162,9 +162,7 @@ export const mergePdfPages = async (pagePaths, outputPath) => {
     await fs.writeFile(outputPath, mergedPdfBytes);
 };
 
-// ================================= \\
-// Save final PDF to reports folder  \\
-// ================================= \\
+// Save final PDF to reports folder
 export const saveReportPdf = async (pdfPath) => {
     const date = new Date();
     const year = date.getFullYear();

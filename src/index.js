@@ -2,7 +2,6 @@ import path from 'path';
 import helmet from 'helmet';
 import express from 'express';
 import mongoose from 'mongoose';
-import bodyParser from 'body-parser';
 import { fileURLToPath } from 'url';
 import rateLimit from 'express-rate-limit';
 
@@ -23,19 +22,18 @@ const app = express();
 // --- Security Middlewares (Set various security HTTP headers) ---
 app.use(helmet());
 
+// Limit each IP to 100 requests per windowMs for 15 minutes
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,   // 15 minutes
-    max: 100,                   // Limit each IP to 100 requests per windowMs
+    windowMs: 15 * 60 * 1000,
+    max: 100,
     standardHeaders: true,
     legacyHeaders: false,
 });
 app.use(limiter);
 
 // --- Body Parsers ---
-app.use(express.json());
+app.use(express.json({ limit: "1024mb" }));
 app.use(express.urlencoded({ extended: true }));
-
-app.use(bodyParser.json({ limit: "1024mb" }));
 
 // --- Static Folders ---
 app.use('/css', express.static(path.join(__dirname, 'public', 'css')));
@@ -46,8 +44,8 @@ app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
 app.use('/api/v1/reports', reportRoutes);
 
 // --- Global Error Handler ---
-app.use((err, _req, res) => {
-    console.error(err.stack);
+app.use((err, req, res) => {
+    console.error('ERROR: ', err.stack);
     res.status(500).send('Something broke!');
 });
 
@@ -55,8 +53,11 @@ const PORT = process.env.PORT || 3000;
 
 const startServer = async () => {
     try {
+        // Connect to Mongo DB
         await connectDB();
-        await browserService.init(); // Initialize the shared browser instance
+
+        // Initialize the shared browser instance
+        await browserService.init();
 
         const server = app.listen(PORT, () => {
             console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
