@@ -1,4 +1,4 @@
-import path  from 'path';
+import path from 'path';
 import fs from 'fs-extra';
 import { fileURLToPath } from 'url';
 import { PDFDocument } from 'pdf-lib';
@@ -50,26 +50,20 @@ const generateSinglePage = async (html, template, tempDir, pageNumber) => {
     }
 };
 
-export const generatePdfPages = async (defects, utils, tempDir, onProgress, startingPageNumber = 0) => {
+export const generatePdfPages = async (defects, utils, tempDir, startingPageNumber = 0) => {
     const templatePath = path.join(__dirname, '..', 'templates', `${utils.template}.hbs`);
     const templateSource = await fs.readFile(templatePath, 'utf-8');
     const template = Handlebars.compile(templateSource);
 
     const limiter = browserService.getLimiter();
     const generationPromises = [];
-    let processedCountInBatch = 0;
 
     for (let i = 0; i < defects.length; i++) {
         const absolutePageNumber = startingPageNumber + i + 1;
         const pageData = { ...defects[i], ...utils, pageNumber: absolutePageNumber };
 
         const promise = limiter(async () => {
-            const result = await generateSinglePage(template(pageData), utils.template, tempDir, absolutePageNumber);
-            processedCountInBatch++;
-            if(onProgress) {
-                await onProgress(processedCountInBatch);
-            }
-            return result;
+            return await generateSinglePage(template(pageData), utils.template, tempDir, absolutePageNumber);
         });
         generationPromises.push(promise);
     }

@@ -1,13 +1,11 @@
 import path from 'path';
 import helmet from 'helmet';
 import express from 'express';
-import mongoose from 'mongoose';
 import { fileURLToPath } from 'url';
 import rateLimit from 'express-rate-limit';
 
 import './config/index.js';
 
-import connectDB from './config/db.js';
 import reportRoutes from './routes/report.route.js';
 import reportQueue from './queues/report.queue.js';
 import reportWorker from './workers/report.worker.js';
@@ -53,9 +51,6 @@ const PORT = process.env.PORT || 3000;
 
 const startServer = async () => {
     try {
-        // Connect to Mongo DB
-        await connectDB();
-
         // Initialize the shared browser instance
         await browserService.init();
 
@@ -90,11 +85,6 @@ const startServer = async () => {
                     console.log('Closing Puppeteer browser...');
                     await browserService.closeBrowser();
                     console.log('Puppeteer browser closed.');
-
-                    // 5. Close database connection
-                    console.log('Closing MongoDB connection...');
-                    await mongoose.connection.close();
-                    console.log('MongoDB connection closed.');
 
                     console.log('Graceful shutdown complete.');
                     process.exit(0);
