@@ -5,9 +5,21 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Dynamically load environment variables based on NODE_ENV
-const envFile = `.env.${process.env.NODE_ENV || 'development'}`;
-const envPath = path.resolve(__dirname, `../../${envFile}`);
-dotenv.config({ path: envPath });
+const baseEnvPath = path.resolve(__dirname, '../../.env');
+dotenv.config({ path: baseEnvPath });
+console.log(`Loading base environment from: ${baseEnvPath}`);
 
-console.log(`Loading environment from: ${envPath}`);
+const nodeEnv = process.env.NODE_ENV || 'development';
+const envFile = `.env.${nodeEnv}`;
+const envPath = path.resolve(__dirname, `../../${envFile}`);
+
+try {
+   const result = dotenv.config({ path: envPath });
+   if (result.parsed) {
+      console.log(`Loading environment from: ${envPath}`);
+   } else {
+      console.log(`No overrides found in: ${envPath}`);
+   }
+} catch (err) {
+   console.log(`Environment file not found (optional): ${envPath}`);
+}

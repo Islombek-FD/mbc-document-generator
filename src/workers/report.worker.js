@@ -78,8 +78,7 @@ const generateDefectsPdf = async ({ reportId, filter, utils }) => {
             if (!dataResponse.ok) {
                 throw new Error(`Failed to fetch data page ${i}: ${await dataResponse.text()}`);
             }
-            const defectPage = await dataResponse.json();
-            const defects = defectPage.data;
+            const { data: defects } = await dataResponse.json();
 
             if (defects && defects.length > 0) {
                 const generatedPaths = await pdfService.generatePdfPages(
@@ -162,10 +161,10 @@ const generateDefectPdf = async ({ reportId, data, utils }) => {
     }
 };
 
-const worker = new Worker('report-generation', processor, {
+const reportWorker = new Worker('report-generation', processor, {
     connection: redisOptions,
-    concurrency: parseInt(process.env.WORKER_CONCURRENCY, 10) || 4,
-    lockDuration: 600000, // 10 minutes
+    concurrency: parseInt(process.env.WORKER_CONCURRENCY, 10) || 2,
+    lockDuration: 1800000, // 30 minutes
     limiter: {
         max: 10,
         duration: 1000
@@ -173,13 +172,12 @@ const worker = new Worker('report-generation', processor, {
     autorun: true,
 });
 
-worker.on('completed', (job) => {
+reportWorker.on('completed', (job) => {
     console.log(`Job ${job.id} has completed.`);
 });
 
-worker.on('failed', (job, err) => {
+reportWorker.on('failed', (job, err) => {
     console.error(`Job ${job.id} has failed with ${err.message}`);
 });
 
-// Export the worker instance for graceful shutdown
-export default worker;
+export default reportWorker;
