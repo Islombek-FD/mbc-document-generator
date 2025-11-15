@@ -5,10 +5,15 @@ import { fileURLToPath } from 'url';
 
 import reportQueue from '../queues/report.queue.js';
 
+import apiKeyAuth from '../middleware/auth.middleware.js';
+
 const router = express.Router();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Protect generate + download
+router.use(['/download', '/:id/generate'], apiKeyAuth);
 
 /**
  * POST /reports/download

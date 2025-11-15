@@ -7,7 +7,7 @@ import redisOptions from '../config/redis.js';
 import * as pdfService from '../services/pdf.service.js';
 import * as integrationService from '../services/integration.service.js';
 
-const BATCH_SIZE = 100;
+const BATCH_SIZE = process.env.DEFECTS_BATCH_SIZE || 100;
 
 const processor = async (job) => {
     const { reportId, utils: { template } } = job.data;
@@ -29,41 +29,46 @@ const generateDefectsPdf = async ({ reportId, filter, utils }) => {
 
         await integrationService.updateReport(reportId, { status: 'PROCESSING' });
 
-        // --- 2. Get Total Count ---
-        const totalPages = await integrationService.getDefectsCount(filter);
-
-        if (totalPages === 0) {
-            console.log(`Report ${reportId} has no content. Completing early.`);
-            await integrationService.updateReport(reportId, { status: 'COMPLETED' });
-            await fs.rm(tempDir, { recursive: true, force: true });
-            return;
-        }
-
-        // --- 3. Paginated Data Fetching and PDF Generation ---
+        // --- 2. Paginated Data Fetching and PDF Generation ---
+        let page = 0;
         let processedPages = 0;
         const allPagePaths = [];
-        const totalBatches = Math.ceil(totalPages / BATCH_SIZE);
 
-        for (let i = 0; i < totalBatches; i++) {
-            console.log(`Report ${reportId}: Fetching page ${i+1}/${totalBatches}.`);
+        while (true) {
+            console.log(`Report ${reportId}: Fetching batch page=${page+1}, size=${BATCH_SIZE}`);
 
-            const defects = await integrationService.getDefects(i, BATCH_SIZE, filter);
+            const { defects, totalPages } = await integrationService.getDefects(page, BATCH_SIZE, filter);
 
-            if (defects && defects.length > 0) {
-                const generatedPaths = await pdfService.generatePdfPages(
-                   defects,
-                   utils,
-                   tempDir,
-                   processedPages // Starting page number for this batch
-                );
-                allPagePaths.push(...generatedPaths);
-                processedPages += defects.length;
+            console.log(`Report ${reportId}: Fetched batch page=${page+1}, size=${defects.length}`);
+
+            if (!defects || defects.length === 0) {
+                console.log(`Report ${reportId}: No more defects found. Stopping.`);
+                break;
+            }
+
+            // Generate PDF pages for batch
+            const generatedPaths = await pdfService.generatePdfPages(
+               defects,
+               utils,
+               tempDir,
+               processedPages
+            );
+
+            allPagePaths.push(...generatedPaths);
+            processedPages += defects.length;
+
+            // Continue to next page
+            page++;
+
+            if (totalPages !== undefined && page === totalPages) {
+                console.log(`Report ${reportId}: All pages processed via backend total pages: ${totalPages}`);
+                break;
             }
         }
 
         // --- 4. Merge PDFs ---
         if (allPagePaths.length === 0) {
-            throw new Error("No PDF pages were generated despite having a total count > 0.");
+            throw new Error(`Report ${reportId}: No PDF pages were generated despite having a total count > 0.`);
         }
         const finalPdfPath = path.join(tempDir, 'final-report.pdf');
         await pdfService.mergePdfPages(allPagePaths, finalPdfPath);
@@ -72,9 +77,9 @@ const generateDefectsPdf = async ({ reportId, filter, utils }) => {
         const destPath = await pdfService.saveReportPdf(finalPdfPath);
 
         await integrationService.updateReport(reportId, { uploadPath: `/${destPath}`, status: 'COMPLETED' });
-        console.log(`Report ${reportId} completed successfully. Report available at: ${destPath}`);
+        console.log(`Report ${reportId}: Completed successfully. Report available at: ${destPath}`);
     } catch (error) {
-        console.error(`Report ${reportId} failed: `, error);
+        console.error(`Report ${reportId}: Failed: `, error);
         await integrationService.updateReport(reportId, { error: error.message, status: 'FAILED' });
 
         // Re-throw the error to let BullMQ know the job failed
@@ -83,7 +88,7 @@ const generateDefectsPdf = async ({ reportId, filter, utils }) => {
         // --- 6. Cleanup temp directory ---
         if (tempDir) {
             await fs.rm(tempDir, { recursive: true, force: true });
-            console.log(`Cleaned up temp directory: ${tempDir}`);
+            console.log(`Report ${reportId}: Cleaned up temp directory: ${tempDir}`);
         }
     }
 };
@@ -98,9 +103,9 @@ const generateDefectPdf = async ({ reportId, data, utils }) => {
 
         // --- 3. Set upload path to report ---
         await integrationService.updateReport(reportId, { uploadPath: `/${destPath}`, status: 'COMPLETED' });
-        console.log(`Report ${reportId} completed successfully. Report available at: ${destPath}`);
+        console.log(`Report ${reportId}: Completed successfully. Report available at: ${destPath}`);
     } catch (error) {
-        console.error(`Report ${reportId} failed: `, error);
+        console.error(`Report ${reportId}: Failed: `, error);
         await integrationService.updateReport(reportId, { error: error.message, status: 'FAILED' });
 
         // Re-throw the error to let BullMQ know the job failed

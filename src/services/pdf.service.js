@@ -170,7 +170,6 @@ export const saveReportPdf = async (pdfPath) => {
     const destPath = path.join(reportsDir, fileName);
 
     await fs.copyFile(pdfPath, destPath);
-    console.log(`PDF saved at: ${destPath}`);
 
     return path.relative(path.join(__dirname, '../..'), destPath).replace(/\\/g, '/');
 };

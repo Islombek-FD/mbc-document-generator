@@ -1,23 +1,17 @@
 const BACKEND_API_URL = process.env.BACKEND_API_URL;
+const BACKEND_API_KEY = process.env.BACKEND_API_KEY;
 
 if (!BACKEND_API_URL) {
    throw new Error("BACKEND_API_URL environment variable is not set.");
 }
 
-export const getDefectsCount = async (filter) => {
-   const response = await fetch(`${BACKEND_API_URL}/api/v1/generator/defects/count`, {
-      method: 'POST',
-      headers: {
-         'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(filter),
-   });
+if (!BACKEND_API_KEY) {
+   throw new Error("BACKEND_API_KEY environment variable is not set.");
+}
 
-   if (!response.ok) {
-      throw new Error(`Failed to fetch total count: ${await response.text()}`);
-   }
-
-   return await response.json();
+const headers = {
+   'Content-Type': 'application/json',
+   'x-api-key': BACKEND_API_KEY
 }
 
 export const getDefects = async (i, batchSize, filter) => {
@@ -25,29 +19,25 @@ export const getDefects = async (i, batchSize, filter) => {
    url.searchParams.append('page', i);
    url.searchParams.append('size', batchSize);
 
-   const dataResponse = await fetch(url.toString(), {
+   const response = await fetch(url.toString(), {
       method: 'POST',
-      headers: {
-         'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(filter),
    });
 
-   if (!dataResponse.ok) {
-      throw new Error(`Failed to fetch data page ${i}: ${await dataResponse.text()}`);
+   if (!response.ok) {
+      throw new Error(`Failed to fetch data page ${i}: ${await response.text()}`);
    }
 
-   const { data } = await dataResponse.json();
+   const { data, totalPages } = await response.json();
 
-   return data;
+   return { defects: data, totalPages };
 }
 
 export const updateReport = async (id, data) => {
    const response = await fetch(`${BACKEND_API_URL}/api/v1/generator/reports/${id}`, {
       method: 'PUT',
-      headers: {
-         'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(data),
    });
 
