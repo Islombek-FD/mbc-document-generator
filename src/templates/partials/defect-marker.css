@@ -9,16 +9,22 @@
     border-radius: 50%;
 }
 
-.dm__wrapper--status-NEW,
-.dm__wrapper--status-READ {
-    background-color: #5c5c6229;
+.dm__wrapper--status-NEW {
+    background-color: #5957D729;
 }
 .dm__wrapper--status-NEW .dm__point,
-.dm__wrapper--status-READ .dm__point,
-.dm__wrapper--status-NEW .dm__rectangle-svg,
-.dm__wrapper--status-READ .dm__rectangle-svg {
-    color: #8f8f94;
+.dm__wrapper--status-NEW .dm__rectangle-svg {
+    color: #5957D7;
 }
+
+.dm__wrapper--status-READ {
+    background-color: #97C02F29;
+}
+.dm__wrapper--status-READ .dm__point,
+.dm__wrapper--status-READ .dm__rectangle-svg {
+    color: #97C02F;
+}
+
 .dm__wrapper--status-IN_PROGRESS {
     background-color: #ff950033;
 }
@@ -26,6 +32,7 @@
 .dm__wrapper--status-IN_PROGRESS .dm__rectangle-svg {
     color: #ff9500;
 }
+
 .dm__wrapper--status-IN_REVIEW {
     background-color: #5bc9fb33;
 }
@@ -33,25 +40,37 @@
 .dm__wrapper--status-IN_REVIEW .dm__rectangle-svg {
     color: #5bc9fb;
 }
-.dm__wrapper--status-NOT_FIXED,
-.dm__wrapper--status-IN_CORRECT,
-.dm__wrapper--status-DELETED {
+
+.dm__wrapper--status-NOT_FIXED {
     background-color: #ff3b3033;
 }
 .dm__wrapper--status-NOT_FIXED .dm__point,
-.dm__wrapper--status-IN_CORRECT .dm__point,
-.dm__wrapper--status-DELETED .dm__point,
-.dm__wrapper--status-NOT_FIXED .dm__rectangle-svg,
-.dm__wrapper--status-IN_CORRECT .dm__rectangle-svg,
-.dm__wrapper--status-DELETED .dm__rectangle-svg {
+.dm__wrapper--status-NOT_FIXED .dm__rectangle-svg {
     color: #ff3b30;
 }
+
 .dm__wrapper--status-FIXED {
     background-color: #35c85a33;
 }
 .dm__wrapper--status-FIXED .dm__point,
 .dm__wrapper--status-FIXED .dm__rectangle-svg {
     color: #35c85a;
+}
+
+.dm__wrapper--status-IN_CORRECT {
+    background-color: #9935C829;
+}
+.dm__wrapper--status-IN_CORRECT .dm__point,
+.dm__wrapper--status-IN_CORRECT .dm__rectangle-svg {
+    color: #9935C8;
+}
+
+.dm__wrapper--status-DELETED {
+    background-color: #5c5c6229;
+}
+.dm__wrapper--status-DELETED .dm__point,
+.dm__wrapper--status-DELETED .dm__rectangle-svg {
+    color: #8f8f94;
 }
 
 .dm__wrapper--location-FRONT .dm__rectangle {

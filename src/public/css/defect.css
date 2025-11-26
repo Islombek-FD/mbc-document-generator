@@ -116,19 +116,13 @@ img {
     padding: 6px 12px;
     border-radius: 6px;
 }
-.card.card--new,
-.card.card--read {
-    background-color: #FFFFFF;
-    color: #18181C;
-    border: 1px solid #828288;
+.card.card--new {
+    background-color: #5957D7;
+    color: #FFFFFF;
 }
-.card.card--new .layer.one,
-.card.card--read .layer.one,
-.card.card--new .layer.second,
-.card.card--read .layer.second,
-.card.card--new .layer.third,
-.card.card--read .layer.third {
-    background-color: #F3F3F8;
+.card.card--read {
+    background-color: #97C02F;
+    color: #FFFFFF;
 }
 .card.card--in-progress {
     background-color: #FF9500;
@@ -138,15 +132,21 @@ img {
     background-color: #3F89F8;
     color: #FFFFFF;
 }
-.card.card--not-fixed,
-.card.card--in-correct,
-.card.card--deleted {
+.card.card--not-fixed {
     background-color: #FF3B30;
     color: #FFFFFF;
 }
 .card.card--fixed {
     background-color: #35C85A;
     color: #FFFFFF;
+}
+.card.card--in-correct {
+    background-color: #9935C8;
+    color: #FFFFFF;
+}
+.card.card--deleted {
+    background-color: #5C5C6229;
+    color: #60607C;
 }
 
 .card__bordered {
@@ -202,10 +202,13 @@ img {
     font-size: 12px;
     border-radius: 20px;
 }
-.status.status-new,
+.status.status-new {
+    background-color: #5957D729;
+    color: #5957D7;
+}
 .status.status-read {
-    background-color: #E5E5E6;
-    color: #60607C;
+    background-color: #97C02F29;
+    color: #97C02F;
 }
 .status.status-in-progress {
     background-color: #FFEACC;
@@ -215,15 +218,21 @@ img {
     background-color: #DEF4FE;
     color: #5BC9FB;
 }
-.status.status-not-fixed,
-.status.status-in-correct,
-.status.status-deleted {
+.status.status-not-fixed {
     background-color: #FFD8D6;
     color: #FF3B30;
 }
 .status.status-fixed {
     background-color: #D7F4DE;
     color: #35C85A;
+}
+.status.status-in-correct {
+    background-color: #9935C829;
+    color: #9935C8;
+}
+.status.status-deleted {
+    background-color: #E5E5E6;
+    color: #60607C;
 }
 .status svg {
     display: block;
