@@ -14,10 +14,10 @@ const headers = {
    'x-api-key': BACKEND_API_KEY
 }
 
-export const getDefects = async (i, batchSize, filter) => {
+export const getDefects = async (page, size, filter) => {
    const url = new URL(`${BACKEND_API_URL}/api/v1/generator/defects`);
-   url.searchParams.append('page', i);
-   url.searchParams.append('size', batchSize);
+   url.searchParams.append('page', page);
+   url.searchParams.append('size', size);
 
    const response = await fetch(url.toString(), {
       method: 'POST',
@@ -26,7 +26,7 @@ export const getDefects = async (i, batchSize, filter) => {
    });
 
    if (!response.ok) {
-      throw new Error(`Failed to fetch data page ${i}: ${await response.text()}`);
+      throw new Error(`Failed to fetch data page ${page}: ${await response.text()}`);
    }
 
    const { data, totalPages } = await response.json();
